@@ -29,8 +29,8 @@ git push origin main
 1. Go to **[share.streamlit.io](https://share.streamlit.io/)** and log in with your GitHub account.
 2. Click the **New app** button (or **Deploy an app**).
 3. Select **Use existing repo** and fill in your repository details:
-   - **Repository**: `YOUR_GITHUB_USERNAME/major-recommendation-system`
-   - **Branch**: `main`
+   - **Repository**: `ismail-salehh/major-recommendation-system`
+   - **Branch**: `master`
    - **Main file path**: `app.py`
    - **App URL**: *(Optional)* Customize your app's public URL slug.
 
