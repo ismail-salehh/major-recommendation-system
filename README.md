@@ -32,6 +32,9 @@ streamlit run app.py
 ```
 Open your browser at `http://localhost:8501`.
 
+### 4. Cloud Deployment (Streamlit Community Cloud)
+To deploy this application live on the web for free using Streamlit Community Cloud and Hugging Face Hub, see the step-by-step instructions in **[STREAMLIT_COMMUNITY_CLOUD_DEPLOYMENT.md](STREAMLIT_COMMUNITY_CLOUD_DEPLOYMENT.md)**.
+
 > For other setup options, please refer to [SETUPU.md](SETUPU.md).
 ---
 

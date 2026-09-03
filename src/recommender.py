@@ -1,17 +1,51 @@
-"""
-Inference engine and recommendation service for student academic majors.
-"""
+import os
 import json
 import joblib
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from src.major_mapper import generalize_major
 
 DEFAULT_MODEL_PATH = "models/major_recommender_ensemble.pkl"
 DEFAULT_ENCODERS_PATH = "models/label_encoders.pkl"
 DEFAULT_METADATA_PATH = "models/model_metadata.json"
+DEFAULT_REPO_ID = "Awsomio/major-recommender"
+
+
+def resolve_artifact_path(local_path: str, filename: str, repo_id: str = DEFAULT_REPO_ID) -> str:
+    """
+    Checks if a local artifact exists. If not, attempts to download it from Hugging Face Hub.
+    """
+    if os.path.exists(local_path):
+        return local_path
+
+    # Fallback to Hugging Face Hub
+    try:
+        from huggingface_hub import hf_hub_download
+        token = os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_TOKEN")
+        if not token:
+            try:
+                import streamlit as st
+                if "HUGGINGFACE_TOKEN" in st.secrets:
+                    token = st.secrets["HUGGINGFACE_TOKEN"]
+                elif "HF_TOKEN" in st.secrets:
+                    token = st.secrets["HF_TOKEN"]
+            except Exception:
+                pass
+
+        print(f"Downloading {filename} from Hugging Face repository '{repo_id}'...")
+        downloaded_path = hf_hub_download(repo_id=repo_id, filename=filename, token=token)
+        print(f"Successfully loaded {filename} from {downloaded_path}")
+        return downloaded_path
+    except Exception as e:
+        raise FileNotFoundError(
+            f"Could not load '{filename}' locally from '{local_path}' nor download from Hugging Face Hub '{repo_id}'. "
+            f"Error: {e}"
+        )
 
 
 class MajorRecommender:
@@ -19,13 +53,19 @@ class MajorRecommender:
     Main Recommendation Engine for serving major predictions.
     """
 
-    def __init__(self, model_path: str = DEFAULT_MODEL_PATH,
-                 encoders_path: str = DEFAULT_ENCODERS_PATH,
-                 metadata_path: str = DEFAULT_METADATA_PATH):
-        self.model = joblib.load(model_path)
-        self.label_encoders = joblib.load(encoders_path)
+    def __init__(self, model_path: Optional[str] = None,
+                 encoders_path: Optional[str] = None,
+                 metadata_path: Optional[str] = None,
+                 repo_id: str = DEFAULT_REPO_ID):
 
-        with open(metadata_path, 'r', encoding='utf-8') as f:
+        model_file = resolve_artifact_path(model_path or DEFAULT_MODEL_PATH, "major_recommender_ensemble.pkl", repo_id)
+        encoders_file = resolve_artifact_path(encoders_path or DEFAULT_ENCODERS_PATH, "label_encoders.pkl", repo_id)
+        metadata_file = resolve_artifact_path(metadata_path or DEFAULT_METADATA_PATH, "model_metadata.json", repo_id)
+
+        self.model = joblib.load(model_file)
+        self.label_encoders = joblib.load(encoders_file)
+
+        with open(metadata_file, 'r', encoding='utf-8') as f:
             self.metadata = json.load(f)
 
         self.feature_columns = self.metadata.get('feature_columns', [])
